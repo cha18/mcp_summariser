@@ -1,19 +1,31 @@
-import os
 import json
+import os
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 from upstash_redis import Redis
 
+# Load local .env during local development; ignored gracefully on Horizon
 load_dotenv()
 
+# Initialize Upstash Redis client using environment variables
 redis = Redis.from_env()
+
+# Create the FastMCP instance
 mcp = FastMCP("Conversation Summarizer")
 
+
 @mcp.tool()
-def save_conservation_summary(summary, title, tags, ttl_seconds):
-    if tags is None: tags = []
+def save_conversation_summary(
+    summary: str,
+    title: str = "General Chat Summary",
+    tags: list[str] = None,
+    ttl_seconds: int = None,
+) -> dict:
+    """Summarizes a conversation and stores it directly into Upstash Redis."""
+    if tags is None:
+        tags = []
 
     summary_id = f"summary:{uuid.uuid4().hex[:8]}"
     created_at = datetime.now().isoformat()
@@ -27,8 +39,10 @@ def save_conservation_summary(summary, title, tags, ttl_seconds):
     }
 
     try:
+        # Store in Upstash Redis
         redis.set(summary_id, json.dumps(payload))
 
+        # Optional TTL setting
         if ttl_seconds and ttl_seconds > 0:
             redis.expire(summary_id, ttl_seconds)
 
@@ -41,12 +55,5 @@ def save_conservation_summary(summary, title, tags, ttl_seconds):
         return {"status": "error", "error": str(e)}
 
 
-
-
-
-def main():
-    print("Hello from claude-mcp-tool!")
-
-
 if __name__ == "__main__":
-   mcp.run() 
+    mcp.run()
