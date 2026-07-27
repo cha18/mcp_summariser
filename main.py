@@ -23,7 +23,7 @@ def save_conversation_summary(
     tags: list[str] = None,
     ttl_seconds: int = None,
 ) -> dict:
-    """Summarizes a conversation and stores it directly into Upstash Redis."""
+    """Summarizes a conversation walking through the chat and every point of interest and/or significance and stores it directly into Upstash Redis."""
     if tags is None:
         tags = []
 
